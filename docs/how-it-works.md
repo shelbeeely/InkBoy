@@ -1,4 +1,4 @@
-# How InkBoy works
+# How FreeInkBoy works
 
 This page explains how an e-paper screen can show a Game Boy game at about 30 frames per second. The numbers come from the author's board and are measurements, not promises. For the settings themselves, see [tuning.md](tuning.md).
 
@@ -12,9 +12,9 @@ The SSD1681 controller on this board runs one complete waveform per update, for 
 
 [PaperBoy](https://gitlab.com/zephray/paperboy) showed that a different approach works. Its display software keeps a counter for every pixel. A pixel that gets a new target is driven toward it for a few passes, then left alone. Unchanged pixels are never driven.
 
-PaperBoy scans the raw panel signals itself, so it controls each pixel's voltage on every pass. This board does not allow that. The panel is behind the SSD1681 controller, which only accepts image RAM and a waveform table. InkBoy borrows the idea and adapts it to what the controller offers.
+PaperBoy scans the raw panel signals itself, so it controls each pixel's voltage on every pass. This board does not allow that. The panel is behind the SSD1681 controller, which only accepts image RAM and a waveform table. FreeInkBoy borrows the idea and adapts it to what the controller offers.
 
-The controller has two image planes. For each pixel, the pair of bits selects one of the waveform's rows, and InkBoy defines the rows as:
+The controller has two image planes. For each pixel, the pair of bits selects one of the waveform's rows, and FreeInkBoy defines the rows as:
 
 | Plane bits | Meaning |
 | --- | --- |
@@ -26,7 +26,7 @@ Before every scan, the firmware computes a black mask and a white mask. A pixel 
 
 Three changes make a scan short enough to repeat many times a second.
 
-- **A one-frame waveform.** The factory partial waveform is 17 controller frames long. InkBoy replaces it with a fixed waveform that has a single active frame, so one scan drives for roughly 20 ms in dithered mode and roughly 14 ms in grayscale mode.
+- **A one-frame waveform.** The factory partial waveform is 17 controller frames long. FreeInkBoy replaces it with a fixed waveform that has a single active frame, so one scan drives for roughly 20 ms in dithered mode and roughly 14 ms in grayscale mode.
 - **Powering up once.** The panel's analog supply is started once and kept on between scans, which saves about 90 ms per update. It is switched off only when nothing is left to draw.
 - **Faster transfers.** The two 5,000-byte planes are sent at 20 MHz, the maximum the controller datasheet allows for writes.
 
@@ -36,7 +36,7 @@ In dithered mode, each pixel has a counter. When a pixel's target changes to bla
 
 Counters only change after a scan was really delivered. A failed transfer does not use up any budget.
 
-When the last drive pixel finishes, InkBoy sends one more scan with every pixel in HOLD. This is the HOLD ending: it lets the waveform finish cleanly instead of stopping in the middle of a drive. If new motion arrives first, the ending is dropped and the new image goes out with its own masks.
+When the last drive pixel finishes, FreeInkBoy sends one more scan with every pixel in HOLD. This is the HOLD ending: it lets the waveform finish cleanly instead of stopping in the middle of a drive. If new motion arrives first, the ending is dropped and the new image goes out with its own masks.
 
 A bigger budget gives better contrast and cleaner ghost removal, but a moving object stays in an in-between state longer. The tuning guide covers the trade-off.
 
@@ -79,7 +79,7 @@ The firmware keeps a model of every pixel: its estimated level, its target and h
 
 ### History and reversal compensation
 
-Particles remember. A pixel that is light gray, goes to black and returns to light gray ends up slightly different from one that was never driven. InkBoy records the last settled shade of each pixel and the drive it has received since, for one excursion. Two cases are corrected:
+Particles remember. A pixel that is light gray, goes to black and returns to light gray ends up slightly different from one that was never driven. FreeInkBoy records the last settled shade of each pixel and the drive it has received since, for one excursion. Two cases are corrected:
 
 - **A completed return.** The pixel got all the way to the other shade and is coming back. Its return needs a little less or more drive. The Default removes one dose from light gray to black to light gray.
 - **A reversal.** The pixel turned around before the first drive finished. The return dose is scaled from how far the pixel had gone. The Default uses 150% for light gray to black to light gray.

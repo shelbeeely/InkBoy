@@ -35,12 +35,12 @@ else
     die "esptool is not available in the active ESP-IDF environment"
 fi
 
-image=dist/inkboy-$version.bin
-app_image=dist/inkboy-$version-app.bin
-[ -f build/inkboy.bin ] || die "build/inkboy.bin is missing"
+image=dist/freeinkboy-$version.bin
+app_image=dist/freeinkboy-$version-app.bin
+[ -f build/freeinkboy.bin ] || die "build/freeinkboy.bin is missing"
 mkdir -p dist
 rm -f "$image" "$app_image"
-cp build/inkboy.bin "$app_image"
+cp build/freeinkboy.bin "$app_image"
 (
     cd build
     python -m esptool --chip esp32s3 $merge -o "../$image" $(python3 -c '
@@ -53,7 +53,7 @@ for offset, path in sorted(args["flash_files"].items(), key=lambda item: int(ite
 )
 
 if command -v sha256sum >/dev/null 2>&1; then sha256="sha256sum"; else sha256="shasum -a 256"; fi
-(cd dist && $sha256 inkboy-*.bin > SHA256SUMS)
+(cd dist && $sha256 freeinkboy-*.bin > SHA256SUMS)
 
 ls -l dist
 cat dist/SHA256SUMS

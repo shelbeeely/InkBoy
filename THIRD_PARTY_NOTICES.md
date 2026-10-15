@@ -1,14 +1,14 @@
 # Third-party notices
 
-InkBoy's own code is MIT-licensed (see `LICENSE`). This file lists everything
+FreeInkBoy's own code is MIT-licensed (see `LICENSE`). This file lists everything
 else that is in the repository or is fetched when the firmware is built, with
 its license and where the license text lives.
 
 ## Inspiration
 
-InkBoy's per-pixel e-paper driving approach was inspired by Wenting Zhang
+FreeInkBoy's per-pixel e-paper driving approach was inspired by Wenting Zhang
 (Zephray)'s PaperBoy, https://gitlab.com/zephray/paperboy. No PaperBoy code is
-included in InkBoy. The emulator core was originally obtained through
+included in FreeInkBoy. The emulator core was originally obtained through
 PaperBoy's port; the provenance is recorded in
 `components/esp32-gameboy/THIRD_PARTY_NOTICES.md`.
 

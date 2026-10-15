@@ -1,6 +1,6 @@
 # Tuning and presets
 
-InkBoy has two display modes, and each has its own settings. This page lists every setting, what you will see when you change it, and the range the firmware accepts. It then covers presets and the transition test. For background on what a dose or a HOLD is, read [how-it-works.md](how-it-works.md) first.
+FreeInkBoy has two display modes, and each has its own settings. This page lists every setting, what you will see when you change it, and the range the firmware accepts. It then covers presets and the transition test. For background on what a dose or a HOLD is, read [how-it-works.md](how-it-works.md) first.
 
 Successful setting changes apply immediately and persist in the board’s flash. They do not overwrite an SD preset file until you choose Save or Save as new. Grayscale adjustments apply without a full refresh. Changing modes or dithered pulse settings establishes a clean reference.
 

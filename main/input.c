@@ -17,7 +17,7 @@ static uint8_t mapping[8];
 static nvs_handle_t settings;
 static int read_pin(int pin)
 {
-#ifdef INKBOY_DIAGNOSTICS
+#ifdef FREEINKBOY_DIAGNOSTICS
     int simulated = diagnostics_gpio(pin);
     if (simulated >= 0) return simulated;
 #endif
@@ -43,7 +43,7 @@ static void enqueue(unsigned event)
 {
     unsigned write = atomic_load(&event_write), read = atomic_load(&event_read);
     if (write - read < 32) { events[write % 32] = event;
-#ifdef INKBOY_DIAGNOSTICS
+#ifdef FREEINKBOY_DIAGNOSTICS
         ESP_LOGI("test", "PLAYER_BUTTON,event,%u,game,%u",event,atomic_load(&gameplay));
 #endif
          atomic_store(&event_write, write + 1); }
@@ -112,7 +112,7 @@ esp_err_t input_start_hardware_watch(void)
         bool down = read_pin(i ? GPIO_NUM_18 : GPIO_NUM_0) == 0;
         board_buttons[i] = (button_state_t){.raw = down, .stable = down, .handled = true};
     }
-#ifdef INKBOY_DIAGNOSTICS
+#ifdef FREEINKBOY_DIAGNOSTICS
     diagnostics_start();
 #endif
     return xTaskCreate(watch_buttons, "player_buttons", 2048, NULL, 2, NULL) == pdPASS ? ESP_OK : ESP_ERR_NO_MEM;

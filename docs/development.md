@@ -14,11 +14,11 @@ python3 tools/check_safety.py --config sdkconfig
 Activate ESP-IDF and use a clean tree with the submodule at its committed revision. Explicitly disable diagnostics first: the release script builds with the existing build configuration.
 
 ```sh
-idf.py -DINKBOY_DIAGNOSTICS=OFF reconfigure
+idf.py -DFREEINKBOY_DIAGNOSTICS=OFF reconfigure
 tools/make_release.sh <version>
 ```
 
-The script builds, runs host tests and the safety check, and writes `dist/inkboy-<version>.bin` (merged image at 0x0), `dist/inkboy-<version>-app.bin` (app only at 0x10000) and `dist/SHA256SUMS`. It stops on failure. See [flashing](flashing.md) for which image to use.
+The script builds, runs host tests and the safety check, and writes `dist/freeinkboy-<version>.bin` (merged image at 0x0), `dist/freeinkboy-<version>-app.bin` (app only at 0x10000) and `dist/SHA256SUMS`. It stops on failure. See [flashing](flashing.md) for which image to use.
 
 ## Dependencies
 
@@ -28,11 +28,11 @@ For repeated flashing and serial logging, select Bluetooth so USB stays availabl
 
 ## Diagnostic build
 
-`idf.py -B build-test -DINKBOY_DIAGNOSTICS=ON build` enables test-only USB input
+`idf.py -B build-test -DFREEINKBOY_DIAGNOSTICS=ON build` enables test-only USB input
 commands (`ib boot 100`, `ib pwr 850`, `ib controller 00`, `ib usbstate`).
 Use this only for development tests. The ordinary production build excludes
 the diagnostic console and simulated input; explicitly build with
-`-DINKBOY_DIAGNOSTICS=OFF` when returning to production.
+`-DFREEINKBOY_DIAGNOSTICS=OFF` when returning to production.
 
 ## Menu display handover
 

@@ -1,5 +1,5 @@
 #include "diagnostics.h"
-#ifdef INKBOY_DIAGNOSTICS
+#ifdef FREEINKBOY_DIAGNOSTICS
 #include "controller.h"
 #include "gameboy/usb_gamepad.h"
 #include "nvs.h"

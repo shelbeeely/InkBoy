@@ -91,7 +91,7 @@ void app_main(void)
     if (reason == ESP_RST_PANIC || reason == ESP_RST_INT_WDT ||
         reason == ESP_RST_TASK_WDT || reason == ESP_RST_WDT ||
         reason == ESP_RST_BROWNOUT) {
-        ESP_LOGE("inkboy", "Reset reason %d: refusing automatic start after a crash; power-cycle to retry", reason);
+        ESP_LOGE("freeinkboy", "Reset reason %d: refusing automatic start after a crash; power-cycle to retry", reason);
         return;
     }
     run_player();

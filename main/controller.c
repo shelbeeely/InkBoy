@@ -156,7 +156,7 @@ esp_err_t controller_toggle_usb(void)
 
 bool controller_connected(void)
 {
-#ifdef INKBOY_DIAGNOSTICS
+#ifdef FREEINKBOY_DIAGNOSTICS
     if (diagnostics_controller() >= 0) return true;
 #endif
     if (!running || (active == CONTROLLER_USB && console_mode)) return false;
@@ -165,7 +165,7 @@ bool controller_connected(void)
 
 uint8_t controller_raw(void)
 {
-#ifdef INKBOY_DIAGNOSTICS
+#ifdef FREEINKBOY_DIAGNOSTICS
     int simulated = diagnostics_controller();
     if (simulated >= 0) return (uint8_t)simulated;
 #endif

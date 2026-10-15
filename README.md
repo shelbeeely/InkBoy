@@ -1,6 +1,8 @@
-# InkBoy
+# FreeInkBoy
 
-InkBoy runs Game Boy games on a Waveshare ESP32-S3 e-paper board at about 30 fps. Choose fast dithered black and white or four-shade grayscale. It includes an SD ROM browser, speaker audio, automatic resume, tunable display presets and an optional FPS counter.
+FreeInkBoy runs Game Boy games on a Waveshare ESP32-S3 e-paper board at about 30 fps. Choose fast dithered black and white or four-shade grayscale. It includes an SD ROM browser, speaker audio, automatic resume, tunable display presets and an optional FPS counter.
+
+FreeInkBoy is a fork of [InkBoy](https://github.com/kuslota/InkBoy) for the [Free Ink](https://freeink.org/) ecosystem, targeting the [FreeInk SDK](https://github.com/Free-Ink/freeink-sdk), a hardware-independent SDK for e-paper firmware.
 
 [![Watch the video](docs/thumbnail.png)](https://www.youtube.com/watch?v=XiZmM6hwwAU)
 
@@ -31,14 +33,14 @@ InkBoy runs Game Boy games on a Waveshare ESP32-S3 e-paper board at about 30 fps
 Install ESP-IDF v6.1 with [Espressif Installation Manager](https://docs.espressif.com/projects/idf-im-ui/en/latest/index.html) and open its **IDF Terminal**. Navigate to where you want the project saved (no spaces in the path), connect the board with a USB-C data cable, then run:
 
 ```sh
-git clone --recursive https://github.com/kuslota/InkBoy.git
-cd InkBoy
+git clone --recursive https://github.com/shelbeeely/FreeInkBoy.git
+cd FreeInkBoy
 idf.py set-target esp32s3
 idf.py build
 idf.py flash
 ```
 
-This creates an `InkBoy` folder in your current directory. See the [flashing guide](docs/flashing.md) for folder setup, subsequent builds, prebuilt firmware and USB recovery.
+This creates a `FreeInkBoy` folder in your current directory. See the [flashing guide](docs/flashing.md) for folder setup, subsequent builds, prebuilt firmware and USB recovery.
 
 ### 2. Add games
 
@@ -48,7 +50,7 @@ Format the SD card as FAT32 and copy your ROMs into `/roms`. Power the board off
 
 Choose **Settings → Controller → Connection**:
 
-- **Bluetooth:** turn on the custom controller. InkBoy finds it automatically as `ESP32 Gamepad`.
+- **Bluetooth:** turn on the custom controller. FreeInkBoy finds it automatically as `ESP32 Gamepad`.
 - **USB:** connect the controller with a USB-C to USB-C **data** cable and select USB.
 
 If your button wiring differs, use **Settings → Controller → Map buttons**.
@@ -92,7 +94,7 @@ Found display settings that work better? Open a pull request with your preset or
 
 ## Credits
 
-- [PaperBoy](https://gitlab.com/zephray/paperboy) by Wenting Zhang (Zephray) inspired this project and the per-pixel driving approach. No PaperBoy code is included in InkBoy; see [components/esp32-gameboy/THIRD_PARTY_NOTICES.md](components/esp32-gameboy/THIRD_PARTY_NOTICES.md) for how the emulator core was obtained.
+- [PaperBoy](https://gitlab.com/zephray/paperboy) by Wenting Zhang (Zephray) inspired this project and the per-pixel driving approach. No PaperBoy code is included in FreeInkBoy; see [components/esp32-gameboy/THIRD_PARTY_NOTICES.md](components/esp32-gameboy/THIRD_PARTY_NOTICES.md) for how the emulator core was obtained.
 - The emulator core comes from [CrankBoy](https://github.com/CrankBoyHQ/crankboy-app) and [Peanut-GB](https://github.com/deltabeard/Peanut-GB), through the `esp32-gameboy` component. Sound uses the MiniGB APU from Peanut-GB.
 - The controller enclosure is based on a design by SBPS, with attribution in the controller repository.
 - The ES8311 driver is from Espressif's esp_codec_dev. The display's fixed waveform tables come from Waveshare's [e-Paper library](https://github.com/waveshareteam/e-Paper).

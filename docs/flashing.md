@@ -18,16 +18,16 @@ New-Item -ItemType Directory -Force -Path C:\esp | Out-Null
 cd C:\esp
 ```
 
-Download InkBoy into that folder:
+Download FreeInkBoy into that folder:
 
 ```sh
-git clone --recursive https://github.com/kuslota/InkBoy.git
-cd InkBoy
+git clone --recursive https://github.com/shelbeeely/FreeInkBoy.git
+cd FreeInkBoy
 ```
 
-This creates `~/esp/InkBoy` on macOS/Linux, or `C:\esp\InkBoy` on Windows. **Already downloaded it?** Skip the clone step, navigate to your existing InkBoy folder in the activated terminal, and run `git submodule update --init --recursive`.
+This creates `~/esp/FreeInkBoy` on macOS/Linux, or `C:\esp\FreeInkBoy` on Windows. **Already downloaded it?** Skip the clone step, navigate to your existing FreeInkBoy folder in the activated terminal, and run `git submodule update --init --recursive`.
 
-Connect the board with a USB-C data cable. From inside the InkBoy folder, run:
+Connect the board with a USB-C data cable. From inside the FreeInkBoy folder, run:
 
 ```sh
 idf.py set-target esp32s3  # First build only
@@ -35,26 +35,26 @@ idf.py build
 idf.py flash
 ```
 
-For later builds, open an IDF terminal, navigate to your existing InkBoy folder, then run `idf.py build` and `idf.py flash`. Already using a USB controller? [Free the port first](#usb-controller-mode).
+For later builds, open an IDF terminal, navigate to your existing FreeInkBoy folder, then run `idf.py build` and `idf.py flash`. Already using a USB controller? [Free the port first](#usb-controller-mode).
 
 ## Prebuilt firmware (optional)
 
-When a release provides binaries, download `inkboy-<version>.bin` from the [releases page](https://github.com/kuslota/InkBoy/releases). Verify it against that release’s `SHA256SUMS`. It is a merged image: bootloader, partition table and app in one file, written at address 0.
+When a release provides binaries, download `freeinkboy-<version>.bin` from the [releases page](https://github.com/shelbeeely/FreeInkBoy/releases). Verify it against that release’s `SHA256SUMS`. It is a merged image: bootloader, partition table and app in one file, written at address 0.
 
 ```sh
-esptool --chip esp32s3 write-flash 0x0 inkboy-<version>.bin
+esptool --chip esp32s3 write-flash 0x0 freeinkboy-<version>.bin
 ```
 
-With older esptool versions the command is `esptool.py --chip esp32s3 write_flash 0x0 inkboy-<version>.bin`. You can also flash from a browser with [ESP Web Flasher (esptool-js)](https://espressif.github.io/esptool-js/): connect, set the offset to `0x0`, choose the file, and program.
+With older esptool versions the command is `esptool.py --chip esp32s3 write_flash 0x0 freeinkboy-<version>.bin`. You can also flash from a browser with [ESP Web Flasher (esptool-js)](https://espressif.github.io/esptool-js/): connect, set the offset to `0x0`, choose the file, and program.
 
 If the board is not detected, follow [Recovering the USB port](#recovering-the-usb-port) below.
 
 The merged image also covers the settings area of the flash, so flashing resets saved settings (display mode, active preset, controller choice, button mapping). Presets and saves on the SD card are not touched.
 
-To upgrade and keep your settings, flash only the app image, `inkboy-<version>-app.bin`, from the same release page:
+To upgrade and keep your settings, flash only the app image, `freeinkboy-<version>-app.bin`, from the same release page:
 
 ```sh
-esptool --chip esp32s3 write-flash 0x10000 inkboy-<version>-app.bin
+esptool --chip esp32s3 write-flash 0x10000 freeinkboy-<version>-app.bin
 ```
 
 This leaves the bootloader, partition table and settings as they are, so use the merged image instead if a release says its partition layout changed.

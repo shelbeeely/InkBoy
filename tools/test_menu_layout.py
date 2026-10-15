@@ -9,7 +9,7 @@ CODE=r'''
 #include "screen_draw.h"
 static uint8_t first[5000], second[5000];
 static void save(const char *name,const uint8_t *frame) {
-    const char *folder=getenv("INKBOY_UI_IMAGES");if(!folder)return;
+    const char *folder=getenv("FREEINKBOY_UI_IMAGES");if(!folder)return;
     char path[512];snprintf(path,sizeof path,"%s/%s.pgm",folder,name);FILE *f=fopen(path,"w");assert(f);
     fprintf(f,"P2\n200 200\n255\n");
     for(unsigned y=0;y<200;++y)for(unsigned x=0;x<200;++x)fprintf(f,"%u ",frame[y*25+x/8]&(0x80u>>(x%8))?255:0);
