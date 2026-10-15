@@ -23,12 +23,38 @@ enum {
     CMD_VENDOR_GATE = 0x03, CMD_VENDOR_SOURCE = 0x04, CMD_VENDOR_VCOM = 0x2c,
     CMD_VENDOR_PARTIAL = 0x37, CMD_VENDOR_END = 0x3f,
 };
-/* Pins of the Waveshare ESP32-S3-ePaper-1.54 V2; PIN_PWR drives the active-low AO3401 panel supply switch. */
-enum { PIN_PWR = 6, PIN_BUSY = 8, PIN_RST = 9, PIN_DC = 10,
-       PIN_CS = 11, PIN_CLK = 12, PIN_MOSI = 13 };
+/* Board wiring, normally taken from the FreeInk board profile. PIN_PWR drives the active-low
+ * AO3401 panel supply switch. Fixed while any device exists. */
+static ssd1681_pins_t panel_pins = SSD1681_PINS_WAVESHARE_154;
+static unsigned live_devices;
+#define PIN_PWR ((gpio_num_t)panel_pins.power)
+#define PIN_BUSY ((gpio_num_t)panel_pins.busy)
+#define PIN_RST ((gpio_num_t)panel_pins.rst)
+#define PIN_DC ((gpio_num_t)panel_pins.dc)
+#define PIN_CS ((gpio_num_t)panel_pins.cs)
+#define PIN_CLK ((gpio_num_t)panel_pins.sclk)
+#define PIN_MOSI ((gpio_num_t)panel_pins.mosi)
 #define BUSY_TIMEOUT_MS 10000
 static const char *TAG = "ssd1681";
-static const gpio_num_t signal_pins[] = {PIN_RST, PIN_DC, PIN_CS, PIN_CLK, PIN_MOSI};
+#define SIGNAL_PIN_COUNT 5
+static gpio_num_t signal_pin(size_t i)
+{
+    const gpio_num_t signals[SIGNAL_PIN_COUNT] = {PIN_RST, PIN_DC, PIN_CS, PIN_CLK, PIN_MOSI};
+    return signals[i];
+}
+
+esp_err_t ssd1681_configure_pins(const ssd1681_pins_t *p)
+{
+    if (!p) return ESP_ERR_INVALID_ARG;
+    const int8_t all[] = {p->sclk, p->mosi, p->cs, p->dc, p->rst, p->busy, p->power};
+    for (size_t i = 0; i < sizeof(all); ++i) {
+        if (all[i] < 0 || !GPIO_IS_VALID_GPIO(all[i])) return ESP_ERR_INVALID_ARG;
+        for (size_t j = 0; j < i; ++j) if (all[i] == all[j]) return ESP_ERR_INVALID_ARG;
+    }
+    if (live_devices) return ESP_ERR_INVALID_STATE;
+    panel_pins = *p;
+    return ESP_OK;
+}
 
 struct ssd1681_device {
     spi_device_handle_t spi;
@@ -223,6 +249,7 @@ esp_err_t ssd1681_create(ssd1681_handle_t *out)
     *out = NULL;
     struct ssd1681_device *d = calloc(1, sizeof(*d));
     if (!d) return ESP_ERR_NO_MEM;
+    ++live_devices;
     d->lock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     d->completion = xSemaphoreCreateBinary();
     esp_err_t err = d->completion ? ESP_OK : ESP_ERR_NO_MEM;
@@ -248,8 +275,8 @@ esp_err_t ssd1681_create(ssd1681_handle_t *out)
     err = gpio_isr_handler_add(PIN_BUSY, busy_isr, d);
     if (err != ESP_OK) goto fail;
     d->isr_handler = true;
-    for (size_t i = 0; i < sizeof(signal_pins) / sizeof(signal_pins[0]); ++i) {
-        err = gpio_set_direction(signal_pins[i], GPIO_MODE_INPUT);
+    for (size_t i = 0; i < SIGNAL_PIN_COUNT; ++i) {
+        err = gpio_set_direction(signal_pin(i), GPIO_MODE_INPUT);
         if (err != ESP_OK) goto fail;
     }
     *out = d;
@@ -681,8 +708,8 @@ esp_err_t ssd1681_power_off(ssd1681_handle_t d)
         if (result == ESP_OK) result = err;
     }
     /* Always isolate signals and cut panel power, even after BUSY/SPI failure. */
-    for (size_t i = 0; i < sizeof(signal_pins) / sizeof(signal_pins[0]); ++i) {
-        esp_err_t err = gpio_set_direction(signal_pins[i], GPIO_MODE_INPUT);
+    for (size_t i = 0; i < SIGNAL_PIN_COUNT; ++i) {
+        esp_err_t err = gpio_set_direction(signal_pin(i), GPIO_MODE_INPUT);
         if (result == ESP_OK) result = err;
     }
     esp_err_t err = gpio_set_level(PIN_PWR, 1);
@@ -717,5 +744,6 @@ esp_err_t ssd1681_destroy(ssd1681_handle_t d)
     }
     if (d->completion) vSemaphoreDelete(d->completion);
     free(d);
+    --live_devices;
     return result;
 }

@@ -1,8 +1,8 @@
 #!/bin/sh
 cd "$(dirname "$0")" || exit 1
 if [ ! -f ../managed_components/espressif__cjson/cJSON/cJSON.c ]; then
-    echo "managed_components/espressif__cjson is missing. From the repository root, with ESP-IDF v6.1 activated, run:" >&2
-    echo "    idf.py reconfigure" >&2
+    echo "managed_components/espressif__cjson is missing. From the repository root, run:" >&2
+    echo "    pio run" >&2
     exit 1
 fi
 pass=0

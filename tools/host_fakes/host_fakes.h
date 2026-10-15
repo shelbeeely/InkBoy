@@ -13,6 +13,10 @@ void host_fakes_reset(void);
 /* Virtual clock behind esp_timer_get_time() and vTaskDelay(). Each non-zero
  * delay wakes host_delay_early_us before the requested whole-millisecond tick. */
 extern int64_t host_clock_us;
+/* board_show_status(): the SDK status-screen path. */
+extern unsigned host_board_status_shows;
+extern esp_err_t host_board_status_result;
+extern const uint8_t *host_board_status_frame;
 extern int64_t host_delay_early_us;
 
 /* FreeRTOS: tasks are recorded and only run when a test asks. host_task_run()

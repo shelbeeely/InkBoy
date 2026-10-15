@@ -11,7 +11,7 @@ INCLUDES = [FAKES, ROOT / 'main', ROOT / 'components/ssd1681_fast', ROOT / 'comp
             ROOT / 'components/game_audio/include', ROOT / 'components/ble_gamepad/include', ROOT / 'components/esp32-gameboy/include',
             ROOT / 'components/esp32-gameboy/src/gb_core', ROOT / 'components/esp32-gameboy/src/storage',
             ROOT / 'managed_components/espressif__cjson/cJSON']
-LIBRARY_FAKES = ['host_gpio.c', 'host_heap.c', 'host_log.c', 'host_nvs.c', 'host_reset.c', 'host_rtos.c', 'host_spi.c']
+LIBRARY_FAKES = ['host_board.c', 'host_gpio.c', 'host_heap.c', 'host_log.c', 'host_nvs.c', 'host_reset.c', 'host_rtos.c', 'host_spi.c']
 # The display path as one unit: menus, gameplay and the fast backend over the fake panel.
 DISPLAY_MODULES = ['fast_display.c', 'gray_plan.c', 'gray_plan_parallel.c', 'drive_counters.c', 'screen_draw.c',
                    'screen.c', 'display_config.c', 'latest_frame.c']
@@ -19,7 +19,7 @@ SESSION_FAKES = ['host_panel.c', 'fake_input.c', 'fake_menu.c', 'fake_game_audio
                  'fake_gb_emulator.c', 'fake_game_storage.c']
 GB_VIDEO = ROOT / 'components/esp32-gameboy/src/gb_core/gb_video.c'
 SAVE_FILE = ROOT / 'components/esp32-gameboy/src/storage/save_file.c'
-# Fetched by the component manager; run `idf.py reconfigure` once on a fresh checkout.
+# Fetched by the component manager; run `pio run` once on a fresh checkout.
 CJSON = ROOT / 'managed_components/espressif__cjson/cJSON/cJSON.c'
 PRESET_STORE_MODULES = ['display_preset.c', 'gray_profile.c', 'preset_json.c', 'preset_store.c']
 
@@ -42,7 +42,7 @@ def run(test_source, modules=(), fakes=(), optimize='-O1', extra_sources=(), ven
         includes = [f'-I{p}' for p in INCLUDES]
         vendor_objects = []
         for source in vendor_sources:
-            if not Path(source).exists(): sys.exit(f'{source} is missing; run `idf.py reconfigure` to fetch managed components')
+            if not Path(source).exists(): sys.exit(f'{source} is missing; run `pio run` to fetch managed components')
             vendor_objects.append(str(work / f'{Path(source).stem}.o'))
             if subprocess.run(['cc', '-std=c11', '-w', '-fsanitize=address,undefined', optimize, *includes, '-c', str(source),
                                '-o', vendor_objects[-1]]).returncode: sys.exit('host test failed to compile')

@@ -1,4 +1,5 @@
 #include "screen.h"
+#include "board.h"
 #include "display_config.h"
 #include "fast_display.h"
 #include "screen_draw.h"
@@ -122,13 +123,9 @@ bool screen_message(const char *title, const char *line1, const char *line2, con
 {
     fast_display_set_gray_game(NULL);
     if (!screen_close()) return false;
-    ssd1681_handle_t d = NULL;
     screen_draw_message(panel, title, line1, line2, footer);
-    esp_err_t error = ssd1681_create(&d);
-    if (error == ESP_OK) error = ssd1681_power_on(d);
-    if (error == ESP_OK) error = screen_full_refresh(d);
-    esp_err_t off = ssd1681_destroy(d);
-    if (error == ESP_OK) error = off;
+    /* Standing screens go through the FreeInk SDK display (stock full refresh, panel off after). */
+    esp_err_t error = board_show_status(panel);
     ESP_LOGI(TAG, "PLAYER_SCREEN,%s,result,%d", title, error);
     if (error != ESP_OK) atomic_store(&failed, true);
     return error == ESP_OK;

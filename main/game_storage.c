@@ -1,4 +1,5 @@
 #include "game_storage.h"
+#include "board.h"
 #include "rom_file.h"
 #include "gb_emulator.h"
 #include "driver/sdmmc_host.h"
@@ -43,7 +44,12 @@ esp_err_t game_storage_mount(void)
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
     host.max_freq_khz = SDMMC_FREQ_DEFAULT;
     sdmmc_slot_config_t slot = SDMMC_SLOT_CONFIG_DEFAULT();
-    slot.width = 1; slot.clk = GPIO_NUM_39; slot.cmd = GPIO_NUM_41; slot.d0 = GPIO_NUM_40;
+    int clk, cmd, d0, d1, d2, d3;
+    unsigned width;
+    board_sdmmc(&clk, &cmd, &d0, &d1, &d2, &d3, &width);
+    if (width != 1 && width != 4) return ESP_ERR_NOT_SUPPORTED;
+    slot.width = width; slot.clk = clk; slot.cmd = cmd; slot.d0 = d0;
+    if (width == 4) { slot.d1 = d1; slot.d2 = d2; slot.d3 = d3; }
     const esp_vfs_fat_sdmmc_mount_config_t mount = {
         .format_if_mount_failed = false, .max_files = 3,
     };

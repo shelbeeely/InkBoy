@@ -13,6 +13,11 @@
 #define CLEAN_REFRESH_INTERVAL 2400
 
 typedef struct ssd1681_device *ssd1681_handle_t;
+/* Panel wiring. `power` is the active-low panel supply switch. */
+typedef struct { int8_t sclk, mosi, cs, dc, rst, busy, power; } ssd1681_pins_t;
+#define SSD1681_PINS_WAVESHARE_154 {.sclk = 12, .mosi = 13, .cs = 11, .dc = 10, .rst = 9, .busy = 8, .power = 6}
+/* Select the wiring before the first ssd1681_create(); rejected while a device exists. */
+esp_err_t ssd1681_configure_pins(const ssd1681_pins_t *pins);
 /* Select only after full cleaning, before partial preparation. Full cleaning
  * restores 10 MHz. SSD1681 Rev 0.13, p5/p37: maximum SPI write clock 20 MHz. */
 esp_err_t ssd1681_vendor_set_fast_transport(ssd1681_handle_t dev, bool enabled);

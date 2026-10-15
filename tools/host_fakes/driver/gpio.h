@@ -12,6 +12,7 @@
 #define GPIO_INTR_ANYEDGE 3
 
 typedef int gpio_num_t;
+#define GPIO_IS_VALID_GPIO(pin) ((pin) >= 0 && (pin) < 49)
 typedef struct { uint64_t pin_bit_mask; int mode, pull_up_en, pull_down_en, intr_type; } gpio_config_t;
 typedef void (*gpio_isr_t)(void *);
 

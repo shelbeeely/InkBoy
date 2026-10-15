@@ -28,6 +28,8 @@ typedef struct {
     void (*on_full)(const uint8_t *frame);
     void (*before_scan)(const uint8_t *black, const uint8_t *white);
     void (*after_scan)(esp_err_t error);
+    ssd1681_pins_t pins;
+    unsigned pin_configs;
 } host_panel_t;
 
 extern host_panel_t host_panel;

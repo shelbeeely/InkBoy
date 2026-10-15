@@ -1,6 +1,9 @@
 /build*/
 sdkconfig
 sdkconfig.old
+# PlatformIO writes one sdkconfig per environment.
+sdkconfig.ws154*
+.pio/
 managed_components/
 *.gb
 *.gbc

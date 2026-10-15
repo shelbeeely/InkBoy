@@ -2,7 +2,7 @@
 
 FreeInkBoy runs Game Boy games on a Waveshare ESP32-S3 e-paper board at about 30 fps. Choose fast dithered black and white or four-shade grayscale. It includes an SD ROM browser, speaker audio, automatic resume, tunable display presets and an optional FPS counter.
 
-FreeInkBoy is a fork of [InkBoy](https://github.com/kuslota/InkBoy) for the [Free Ink](https://freeink.org/) ecosystem, targeting the [FreeInk SDK](https://github.com/Free-Ink/freeink-sdk), a hardware-independent SDK for e-paper firmware.
+FreeInkBoy is a fork of [InkBoy](https://github.com/kuslota/InkBoy) for the [Free Ink](https://freeink.org/) ecosystem, built on the [FreeInk SDK](https://github.com/Free-Ink/freeink-sdk), a hardware-independent SDK for e-paper firmware. The board is a FreeInk device (`WS154`), and its pins, keys and standing screens come from the SDK. See [FreeInk SDK](#freeink-sdk).
 
 [![Watch the video](docs/thumbnail.png)](https://www.youtube.com/watch?v=XiZmM6hwwAU)
 
@@ -30,17 +30,15 @@ FreeInkBoy is a fork of [InkBoy](https://github.com/kuslota/InkBoy) for the [Fre
 
 ### 1. Build and flash
 
-Install ESP-IDF v6.1 with [Espressif Installation Manager](https://docs.espressif.com/projects/idf-im-ui/en/latest/index.html) and open its **IDF Terminal**. Navigate to where you want the project saved (no spaces in the path), connect the board with a USB-C data cable, then run:
+Install [PlatformIO Core](https://docs.platformio.org/en/latest/core/installation/index.html) (or the PlatformIO IDE extension for VS Code). Navigate to where you want the project saved (no spaces in the path), connect the board with a USB-C data cable, then run:
 
 ```sh
 git clone --recursive https://github.com/shelbeeely/FreeInkBoy.git
 cd FreeInkBoy
-idf.py set-target esp32s3
-idf.py build
-idf.py flash
+pio run -t upload
 ```
 
-This creates a `FreeInkBoy` folder in your current directory. See the [flashing guide](docs/flashing.md) for folder setup, subsequent builds, prebuilt firmware and USB recovery.
+The first build downloads the toolchain, ESP-IDF 5.5 and Arduino-ESP32 3.3, which takes a while. This creates a `FreeInkBoy` folder in your current directory. See the [flashing guide](docs/flashing.md) for folder setup, subsequent builds, prebuilt firmware and USB recovery.
 
 ### 2. Add games
 
@@ -81,6 +79,18 @@ The controller shares the port with flashing and serial. Unplugging it does **no
 ## Compatibility
 
 Game Boy (DMG) games and dual-mode cartridges in DMG mode, up to 2 MiB. Color-only games and RTC cartridges are not supported. Busy scenes may drop below 30 fps; grayscale can leave faint trails. See [full limitations](docs/compatibility.md).
+
+## FreeInk SDK
+
+FreeInkBoy is a FreeInk SDK consumer. The parts of the SDK it uses are vendored in [`freeink-sdk/`](freeink-sdk/FREEINKBOY.md) and built as an ESP-IDF component next to the firmware, with Arduino-ESP32 as a component (as the SDK requires):
+
+- **BoardConfig:** the Waveshare ESP32-S3-ePaper-1.54 V2 is the FreeInk device `WS154` (`-DFREEINK_DEVICE_WS154`). Every pin the firmware uses, including panel, keys, SD, audio and battery latch, is read from its profile through [`main/board.cpp`](main/board.cpp).
+- **InputManager:** reads the BOOT and PWR keys.
+- **EInkDisplay:** draws the standing screens (startup, power off, errors) through `Ssd1681Driver`, a new SDK panel driver for this board.
+
+The board was added the way the SDK's [Adding a new device](https://github.com/Free-Ink/freeink-sdk#adding-a-new-device) guide describes: a board profile and device flag, plus a new controller driver. The changes are kept as a patch ready to send upstream: `freeink-sdk/patches/`. Gameplay and menus still use FreeInkBoy's own 30 fps drive (`main/fast_display.c`), which the SDK display facade does not model. `Ssd1681Driver` reaches the panel only through the same reviewed `ssd1681_fast` command surface, and `tools/check_safety.py` enforces that.
+
+To port FreeInkBoy to another FreeInk device, add its profile to the SDK, select it in `components/freeink_sdk/CMakeLists.txt` and add an env to `platformio.ini`. The 30 fps drive and its waveforms are specific to the SSD1681.
 
 ## More details
 

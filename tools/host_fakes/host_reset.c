@@ -20,5 +20,8 @@ void host_fakes_reset(void)
     host_reset_reason = 0;
     host_spi_transactions = 0;
     host_spi_error = ESP_OK;
+    host_board_status_shows = 0;
+    host_board_status_result = ESP_OK;
+    host_board_status_frame = NULL;
     host_nvs_reset();
 }

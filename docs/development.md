@@ -1,20 +1,27 @@
 # Development and releases
 
-Host tests compile the real firmware sources against fakes and need no hardware. They use cJSON from `managed_components/`, so run `idf.py reconfigure` once before the first run:
+FreeInkBoy builds with PlatformIO (`platformio.ini`): the pioarduino platform, ESP-IDF 5.5 with Arduino-ESP32 3.3 as a component. `main/` and `components/` are ordinary ESP-IDF components; `components/freeink_sdk` builds the vendored [FreeInk SDK](../freeink-sdk/FREEINKBOY.md).
+
+```sh
+pio run                 # build the ws154 environment
+pio run -t upload       # build and flash
+pio device monitor      # serial log
+```
+
+Host tests compile the real firmware sources against fakes and need no hardware. They use cJSON from `managed_components/`, so run `pio run` once before the first run:
 
 ```sh
 tools/run_tests.sh
-python3 tools/check_safety.py --config sdkconfig
+python3 tools/check_safety.py
 ```
 
-`check_safety.py` fails if the display driver's command set changes. See [display command checks](how-it-works.md#what-the-safety-check-guards).
+`check_safety.py` reads `sdkconfig.ws154`, which `pio run` writes. It fails if the display driver's command set changes, or if the SDK's `Ssd1681Driver` reaches the panel other than through `ssd1681_fast`. See [display command checks](how-it-works.md#what-the-safety-check-guards).
 
 ## Release images
 
-Activate ESP-IDF and use a clean tree with the submodule at its committed revision. Explicitly disable diagnostics first: the release script builds with the existing build configuration.
+Use a clean tree with the submodule at its committed revision. The release script always builds the production `ws154` environment, which never includes diagnostics.
 
 ```sh
-idf.py -DFREEINKBOY_DIAGNOSTICS=OFF reconfigure
 tools/make_release.sh <version>
 ```
 
@@ -22,17 +29,18 @@ The script builds, runs host tests and the safety check, and writes `dist/freein
 
 ## Dependencies
 
-The emulator core is the `components/esp32-gameboy` git submodule. Clone with `--recursive`. ESP-IDF downloads `espressif/cjson` and `espressif/usb` on first configure; versions are pinned in `dependencies.lock`.
+The emulator core is the `components/esp32-gameboy` git submodule. Clone with `--recursive`. The FreeInk SDK libraries are vendored in `freeink-sdk/`; see [its notes](../freeink-sdk/FREEINKBOY.md) for what was added and how to update it. On the first build the component manager downloads `espressif/cjson` (and `espressif/esp-dsp` for Arduino-ESP32); versions are pinned in `dependencies.lock`. The ESP-IDF 5.5 USB host library is built in.
+
+`platformio.ini` removes the managed components Arduino-ESP32 would otherwise pull in (RainMaker, Insights, Zigbee and others). FreeInkBoy does not call `initArduino()`: it would erase NVS after a format change and release Bluetooth memory. BoardConfig and the GPIO-based InputManager do not need it.
 
 For repeated flashing and serial logging, select Bluetooth so USB stays available across resets. See [flashing and recovery](flashing.md).
 
 ## Diagnostic build
 
-`idf.py -B build-test -DFREEINKBOY_DIAGNOSTICS=ON build` enables test-only USB input
+`pio run -e ws154-diagnostics -t upload` enables test-only USB input
 commands (`ib boot 100`, `ib pwr 850`, `ib controller 00`, `ib usbstate`).
-Use this only for development tests. The ordinary production build excludes
-the diagnostic console and simulated input; explicitly build with
-`-DFREEINKBOY_DIAGNOSTICS=OFF` when returning to production.
+Use this only for development tests. The production `ws154` environment excludes
+the diagnostic console and simulated input; flash it again when returning to production.
 
 ## Menu display handover
 

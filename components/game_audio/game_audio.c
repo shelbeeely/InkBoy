@@ -14,20 +14,18 @@
 #include "freertos/task.h"
 #include "vendor/esp_codec_dev/device/include/es8311_codec.h"
 
-/* Pins of the Waveshare ESP32-S3-ePaper-1.54 V2 board. */
-enum {
-    PIN_AUDIO_MCLK = 14,
-    PIN_AUDIO_BCLK = 15,
-    PIN_AUDIO_LRCLK = 38,
-    PIN_AUDIO_DOUT = 45,
-    PIN_CODEC_SDA = 47,
-    PIN_CODEC_SCL = 48,
-    PIN_CODEC_RAIL = 42,
-    PIN_AUDIO_AMP_ENABLE = 46,
-    /* Audio supply switch: LOW powers audio, HIGH removes its supply. */
-    AUDIO_RAIL_ON = 0,
-    AUDIO_RAIL_OFF = 1,
-};
+/* Board wiring, normally taken from the FreeInk board profile before game_audio_init(). */
+static game_audio_pins_t s_pins = GAME_AUDIO_PINS_WAVESHARE_154;
+#define PIN_AUDIO_MCLK s_pins.mclk
+#define PIN_AUDIO_BCLK s_pins.bclk
+#define PIN_AUDIO_LRCLK s_pins.lrclk
+#define PIN_AUDIO_DOUT s_pins.dout
+#define PIN_CODEC_SDA s_pins.codec_sda
+#define PIN_CODEC_SCL s_pins.codec_scl
+#define PIN_CODEC_RAIL s_pins.codec_rail
+#define PIN_AUDIO_AMP_ENABLE s_pins.amp_enable
+/* Audio supply switch: LOW powers audio, HIGH removes its supply. */
+enum { AUDIO_RAIL_ON = 0, AUDIO_RAIL_OFF = 1 };
 
 /* One game frame at 32 kHz contains 535 or 536 samples. */
 #define AUDIO_BLOCK_SAMPLES 536
@@ -179,7 +177,7 @@ static bool codec_init(unsigned sample_rate)
     if (err != ESP_OK) goto fail;
 
     gpio_set_level(PIN_CODEC_RAIL, AUDIO_RAIL_ON);
-    ESP_LOGI(TAG, "Audio rail enabled: GPIO %u = %u (active low)", PIN_CODEC_RAIL, AUDIO_RAIL_ON);
+    ESP_LOGI(TAG, "Audio rail enabled: GPIO %d = %d (active low)", PIN_CODEC_RAIL, AUDIO_RAIL_ON);
     vTaskDelay(pdMS_TO_TICKS(30));
 
     i2s_chan_config_t channel_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
@@ -412,6 +410,14 @@ static void audio_worker(void *arg)
     /* After signaling, this task only self-deletes and touches no shared state. */
     xSemaphoreGive(s_worker_done);
     vTaskDelete(NULL);
+}
+
+esp_err_t game_audio_configure_pins(const game_audio_pins_t *pins)
+{
+    if (!pins) return ESP_ERR_INVALID_ARG;
+    if (s_task || s_tx || s_i2c_bus) return ESP_ERR_INVALID_STATE;
+    s_pins = *pins;
+    return ESP_OK;
 }
 
 esp_err_t game_audio_init(unsigned sample_rate)

@@ -16,6 +16,14 @@ void host_panel_reset(void)
 
 #define P host_panel
 
+esp_err_t ssd1681_configure_pins(const ssd1681_pins_t *pins)
+{
+    assert(pins && !P.powered);
+    P.pins = *pins;
+    ++P.pin_configs;
+    return ESP_OK;
+}
+
 esp_err_t ssd1681_create(ssd1681_handle_t *out)
 {
     *out = (ssd1681_handle_t)1;

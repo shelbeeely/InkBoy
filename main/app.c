@@ -1,3 +1,4 @@
+#include "board.h"
 #include "controller.h"
 #include "display_config.h"
 #include "display_preset.h"
@@ -22,15 +23,16 @@ static const char *TAG = "player";
 
 static void run_player(void)
 {
+    /* Board wiring comes from the FreeInk SDK profile (see board.cpp). */
     esp_err_t error = power_enable_battery();
+    if (!error) error = board_begin();
+    const gpio_num_t boot = (gpio_num_t)board_select_pin();
     gpio_deep_sleep_hold_dis();
-    gpio_hold_dis(GPIO_NUM_6);
-    rtc_gpio_deinit(GPIO_NUM_0);
-    const gpio_config_t boot = {.pin_bit_mask = 1ULL << GPIO_NUM_0,
-        .mode = GPIO_MODE_INPUT, .pull_up_en = GPIO_PULLUP_ENABLE};
-    if (!error) error = gpio_config(&boot);
+    gpio_hold_dis((gpio_num_t)board_panel_power_pin());
+    rtc_gpio_deinit(boot);
+    if (!error) board_input_begin();
     /* Consume the wake press so it cannot select an item on the startup menu. */
-    while (!error && gpio_get_level(GPIO_NUM_0) == 0) vTaskDelay(pdMS_TO_TICKS(20));
+    while (!error && gpio_get_level(boot) == 0) vTaskDelay(pdMS_TO_TICKS(20));
     if (error == ESP_OK) error = input_start_hardware_watch();
     nvs_handle_t settings;
     if (error == ESP_OK) error = nvs_flash_init(); /* Never erase user NVS on an init error. */
@@ -38,7 +40,7 @@ static void run_player(void)
     if (error != ESP_OK) { screen_message("STARTUP ERROR", "RESET TO RETRY", "CHECK USB LOG", ""); return; }
     input_load_mapping(settings);
     controller_load(settings);
-    if (gpio_get_level(GPIO_NUM_18)==0) controller_request_console();
+    if (gpio_get_level((gpio_num_t)board_next_pin())==0) controller_request_console();
     settings_ui_init(settings);
     (void)display_preset_load_active();
     settings_ui_load_display();

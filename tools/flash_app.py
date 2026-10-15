@@ -32,12 +32,18 @@ def single_app_slot(table_bytes, offset):
     return start, size
 
 
+def built_file(build, idf_name, pio_name):
+    """ESP-IDF's name for a build output, or the name PlatformIO gives the same file."""
+    path = build / idf_name
+    return path if path.exists() else build / pio_name
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--build-dir', type=Path, default=ROOT / 'build')
+    parser.add_argument('--build-dir', type=Path, default=ROOT / '.pio/build/ws154')
     parser.add_argument('--port', default='/dev/cu.usbmodem101')
     parser.add_argument('--previous-app', type=Path, help='Also verify this backup against the current app before writing')
-    parser.add_argument('--log', type=Path, default=ROOT / 'build/flash-startup.log')
+    parser.add_argument('--log', type=Path, default=ROOT / '.pio/build/ws154/flash-startup.log')
     parser.add_argument('--until', default='PLAYER_MENU,HOME', help='Startup log marker that confirms the new firmware is ready')
     parser.add_argument('--observe-seconds', type=float, default=0,
                         help='Keep the startup USB connection open to record the test (0..600 seconds)')
@@ -49,9 +55,9 @@ def main():
     metadata = json.loads((build / 'flasher_args.json').read_text())
     if metadata['extra_esptool_args']['chip'] != 'esp32s3':
         raise SystemExit('Expected an ESP32-S3 build')
-    app = build / metadata['app']['file']
+    app = built_file(build, metadata['app']['file'], 'firmware.bin')
     elf = app.with_suffix('.elf')
-    table = build / metadata['partition-table']['file']
+    table = built_file(build, metadata['partition-table']['file'], 'partitions.bin')
     offset = int(metadata['app']['offset'], 0)
     table_bytes = table.read_bytes()
     _, slot_size = single_app_slot(table_bytes, offset)

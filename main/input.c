@@ -1,4 +1,5 @@
 #include "input.h"
+#include "board.h"
 #include "diagnostics.h"
 #include "controller.h"
 #include "gb_emulator.h"
@@ -15,13 +16,24 @@ static const char *TAG = "player";
 /* Indexed by the Game Boy button bit: A,B,Select,Start,Right,Left,Up,Down. */
 static uint8_t mapping[8];
 static nvs_handle_t settings;
-static int read_pin(int pin)
+/* Both board keys are active-low; diagnostics builds can simulate their levels. */
+static void read_keys(bool down[2])
 {
+    board_buttons(&down[0], &down[1]);
 #ifdef FREEINKBOY_DIAGNOSTICS
-    int simulated = diagnostics_gpio(pin);
-    if (simulated >= 0) return simulated;
+    const int pins[2] = {board_select_pin(), board_next_pin()};
+    for (unsigned i = 0; i < 2; ++i) {
+        int simulated = diagnostics_gpio(pins[i]);
+        if (simulated >= 0) down[i] = simulated == 0;
+    }
 #endif
-    return gpio_get_level(pin);
+}
+
+static bool keys_down(void)
+{
+    bool down[2];
+    read_keys(down);
+    return down[0] || down[1];
 }
 
 uint8_t input_buttons(void)
@@ -32,7 +44,7 @@ uint8_t input_buttons(void)
 }
 
 typedef struct { bool raw, stable, handled; int64_t changed, pressed; } button_state_t;
-static button_state_t board_buttons[2];
+static button_state_t keys[2];
 static _Atomic bool gameplay;
 static bool chord, chord_reported;
 static int64_t chord_started;
@@ -65,7 +77,8 @@ void input_clear_events(void) { while (input_hardware_event()) {} }
 void input_sample_hardware(void)
 {
     int64_t now = esp_timer_get_time();
-    bool down[2] = {read_pin(GPIO_NUM_0) == 0, read_pin(GPIO_NUM_18) == 0};
+    bool down[2];
+    read_keys(down);
     if (down[0] && down[1]) {
         if (!chord) {
             if (atomic_load(&gameplay)) enqueue(INPUT_BACK);
@@ -77,7 +90,7 @@ void input_sample_hardware(void)
         }
     } else chord_started=0;
     for (unsigned i = 0; i < 2; ++i) {
-        button_state_t *b = &board_buttons[i];
+        button_state_t *b = &keys[i];
         bool raw = down[i];
         if (raw != b->raw) { b->raw = raw; b->changed = now; }
         if (now - b->changed >= 30000 && b->stable != raw) {
@@ -93,7 +106,7 @@ void input_sample_hardware(void)
             enqueue(i ? INPUT_BACK : INPUT_PREVIOUS); b->handled = true;
         }
     }
-    if (!down[0] && !down[1] && !board_buttons[0].stable && !board_buttons[1].stable) chord = false;
+    if (!down[0] && !down[1] && !keys[0].stable && !keys[1].stable) chord = false;
 }
 
 static void watch_buttons(void *unused)
@@ -104,14 +117,11 @@ static void watch_buttons(void *unused)
 
 esp_err_t input_start_hardware_watch(void)
 {
-    const gpio_config_t buttons = {.pin_bit_mask = (1ULL << GPIO_NUM_0) | (1ULL << GPIO_NUM_18),
-        .mode = GPIO_MODE_INPUT, .pull_up_en = GPIO_PULLUP_ENABLE};
-    esp_err_t error = gpio_config(&buttons);
-    if (error) return error;
-    for (unsigned i = 0; i < 2; ++i) {
-        bool down = read_pin(i ? GPIO_NUM_18 : GPIO_NUM_0) == 0;
-        board_buttons[i] = (button_state_t){.raw = down, .stable = down, .handled = true};
-    }
+    /* board_input_begin() configured the keys through the SDK input manager. */
+    bool down[2];
+    read_keys(down);
+    for (unsigned i = 0; i < 2; ++i)
+        keys[i] = (button_state_t){.raw = down[i], .stable = down[i], .handled = true};
 #ifdef FREEINKBOY_DIAGNOSTICS
     diagnostics_start();
 #endif
@@ -134,7 +144,7 @@ bool input_wait_controller(void)
 
 void input_wait_release(void)
 {
-    while (controller_raw() || read_pin(GPIO_NUM_0) == 0 || read_pin(GPIO_NUM_18) == 0) vTaskDelay(pdMS_TO_TICKS(20));
+    while (controller_raw() || keys_down()) vTaskDelay(pdMS_TO_TICKS(20));
     vTaskDelay(pdMS_TO_TICKS(40));
     input_clear_events();
 }
@@ -152,7 +162,7 @@ bool input_mapping_valid(void)
 
 static bool mapping_release(void)
 {
-    while (controller_raw() || read_pin(GPIO_NUM_0) == 0 || read_pin(GPIO_NUM_18) == 0) {
+    while (controller_raw() || keys_down()) {
         if (!controller_connected() || (input_hardware_event() >= INPUT_BACK)) return false;
         if (screen_service() < 0) return false;
         vTaskDelay(pdMS_TO_TICKS(10));

@@ -2,7 +2,7 @@
 
 ## Build from source
 
-Install ESP-IDF v6.1 using [Espressif Installation Manager](https://docs.espressif.com/projects/idf-im-ui/en/latest/index.html). In its dashboard, select v6.1 and choose **Open IDF Terminal** (or use the **IDF_PowerShell** shortcut on Windows). In that terminal, run `idf.py --version` and check that it reports v6.1.
+Install [PlatformIO Core](https://docs.platformio.org/en/latest/core/installation/index.html), or the PlatformIO IDE extension for VS Code and use its terminal. Run `pio --version` to check it is on your path. You do not need a separate ESP-IDF install: PlatformIO downloads the pinned toolchain, ESP-IDF 5.5 and Arduino-ESP32 3.3 (the [pioarduino](https://github.com/pioarduino/platform-espressif32) platform the FreeInk SDK uses) on the first build.
 
 Choose a project folder with no spaces in its full path. For example, on **macOS/Linux**:
 
@@ -25,17 +25,17 @@ git clone --recursive https://github.com/shelbeeely/FreeInkBoy.git
 cd FreeInkBoy
 ```
 
-This creates `~/esp/FreeInkBoy` on macOS/Linux, or `C:\esp\FreeInkBoy` on Windows. **Already downloaded it?** Skip the clone step, navigate to your existing FreeInkBoy folder in the activated terminal, and run `git submodule update --init --recursive`.
+This creates `~/esp/FreeInkBoy` on macOS/Linux, or `C:\esp\FreeInkBoy` on Windows. **Already downloaded it?** Skip the clone step, navigate to your existing FreeInkBoy folder, and run `git submodule update --init --recursive`.
 
 Connect the board with a USB-C data cable. From inside the FreeInkBoy folder, run:
 
 ```sh
-idf.py set-target esp32s3  # First build only
-idf.py build
-idf.py flash
+pio run -t upload
 ```
 
-For later builds, open an IDF terminal, navigate to your existing FreeInkBoy folder, then run `idf.py build` and `idf.py flash`. Already using a USB controller? [Free the port first](#usb-controller-mode).
+This builds the `ws154` environment and flashes bootloader, partition table and app. Add `--upload-port <port>` if more than one board is connected, and use `pio device monitor` for the serial log. For later builds run the same command again. Already using a USB controller? [Free the port first](#usb-controller-mode).
+
+**Coming from an ESP-IDF 6.1 build of InkBoy?** FreeInkBoy builds with ESP-IDF 5.5. The partition layout is unchanged, but reading settings saved by 6.1 has not been tested. If the board shows **STARTUP ERROR** after updating, flash the full image (`pio run -t erase` then `pio run -t upload`). That resets saved settings; games, saves and presets on the SD card are kept.
 
 ## Prebuilt firmware (optional)
 

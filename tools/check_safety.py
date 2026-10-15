@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser()
-parser.add_argument('--config', type=Path, default=ROOT / 'sdkconfig')
+parser.add_argument('--config', type=Path, default=ROOT / 'sdkconfig.ws154')
 args = parser.parse_args()
 source = (ROOT / 'components/ssd1681_fast/ssd1681_fast.c').read_text()
 source = re.sub(r'/\*.*?\*/|//[^\n]*', '', source, flags=re.S)
@@ -33,6 +33,10 @@ for path in list((ROOT / 'main').glob('*.c')) + list((ROOT / 'components').rglob
     if path.name != 'ssd1681_fast.c':
         assert not re.search(r'\bspi_device_(polling_transmit|transmit|queue_trans)\s*\(', code), f'Panel transport bypass in {path}'
     assert not re.search(r'\besp_efuse_\w+\s*\(', code), f'eFuse call in {path}'
+# The FreeInk SDK panel driver for this board must reach the panel only through ssd1681_fast.
+sdk_driver = re.sub(r'/\*.*?\*/|//[^\n]*', '', (ROOT / 'freeink-sdk/libs/display/FreeInkDisplay/src/driver/Ssd1681Driver.cpp').read_text(), flags=re.S)
+assert not re.search(r'\b(SPI|spi_\w+|EpdBus::\w+|bus\.\w+|gpio_\w+|digitalWrite)\b', sdk_driver), 'SDK driver bypasses ssd1681_fast'
+assert not re.search(r'\b0x[0-9a-f]{2}\b', sdk_driver, re.I), 'SDK driver must not carry raw SSD1681 commands'
 config = args.config
 if config.exists():
     text = config.read_text()
