@@ -63,6 +63,9 @@
 #if FREEINK_DRIVER_PAPER_MONO
 #include "driver/PaperMonoDriver.h"
 #endif
+#if FREEINK_DRIVER_SSD1681
+#include "driver/Ssd1681Driver.h"
+#endif
 
 namespace freeink {
 namespace {
@@ -237,6 +240,8 @@ void FreeInkDisplay::selectDriver() {
       _driver = &lgfxEpdDriver();
 #elif FREEINK_DRIVER_IT8951
       _driver = &it8951Driver();
+#elif FREEINK_DRIVER_SSD1681
+      _driver = &ssd1681Driver();
 #endif
       break;
   }

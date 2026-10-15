@@ -81,6 +81,9 @@
 #ifndef FREEINK_DEVICE_PICCO
 #define FREEINK_DEVICE_PICCO 0
 #endif
+#ifndef FREEINK_DEVICE_WS154
+#define FREEINK_DEVICE_WS154 0
+#endif
 
 #ifndef FREEINK_DEVICE_METALIO_EINK4
 #define FREEINK_DEVICE_METALIO_EINK4 0
@@ -94,9 +97,9 @@
       FREEINK_DEVICE_MURPHY || FREEINK_DEVICE_DELINK || FREEINK_DEVICE_LILYGO || FREEINK_DEVICE_M5PAPER ||               \
       FREEINK_DEVICE_STICKY || FREEINK_DEVICE_PAPERMONO || FREEINK_DEVICE_PAPERS3 || FREEINK_DEVICE_MURPHY_M4 ||         \
       FREEINK_DEVICE_EEGO_A4 || FREEINK_DEVICE_ONEPAGE || FREEINK_DEVICE_WS397 || FREEINK_DEVICE_METALIO_EINK4 || \
-      FREEINK_DEVICE_PICCO)
+      FREEINK_DEVICE_PICCO || FREEINK_DEVICE_WS154)
 #error \
-    "FreeInk: no device selected. Pass at least one -DFREEINK_DEVICE_<NAME> (X4, X3, X4PRO, X4CLASSIC, M5, MURPHY, DELINK, LILYGO, M5PAPER, STICKY, PAPERMONO, PAPERS3, MURPHY_M4, EEGO_A4, ONEPAGE, WS397, METALIO_EINK4, PICCO) in your build env — see platformio.sample.ini."
+    "FreeInk: no device selected. Pass at least one -DFREEINK_DEVICE_<NAME> (X4, X3, X4PRO, X4CLASSIC, M5, MURPHY, DELINK, LILYGO, M5PAPER, STICKY, PAPERMONO, PAPERS3, MURPHY_M4, EEGO_A4, ONEPAGE, WS397, METALIO_EINK4, PICCO, WS154) in your build env — see platformio.sample.ini."
 #endif
 // Each device belongs to one MCU family; a binary targets exactly one. X3/X4 are
 // ESP32-C3; M5 PaperColor/Murphy/de-link/LilyGo are ESP32-S3; M5Paper v1.1 is the
@@ -108,7 +111,7 @@
   (FREEINK_DEVICE_M5 || FREEINK_DEVICE_MURPHY || FREEINK_DEVICE_DELINK || FREEINK_DEVICE_LILYGO ||        \
    FREEINK_DEVICE_STICKY || FREEINK_DEVICE_X4PRO || FREEINK_DEVICE_X4CLASSIC || FREEINK_DEVICE_PAPERMONO ||  \
    FREEINK_DEVICE_PAPERS3 || FREEINK_DEVICE_MURPHY_M4 || FREEINK_DEVICE_EEGO_A4 || FREEINK_DEVICE_WS397 || FREEINK_DEVICE_METALIO_EINK4 || \
-   FREEINK_DEVICE_PICCO)
+   FREEINK_DEVICE_PICCO || FREEINK_DEVICE_WS154)
 #define FREEINK_MCU_ESP32 (FREEINK_DEVICE_M5PAPER)
 #if (FREEINK_MCU_C3 + FREEINK_MCU_C61 + FREEINK_MCU_S3 + FREEINK_MCU_ESP32) != 1
 #error \
@@ -196,6 +199,14 @@
 #define FREEINK_DRIVER_PAPER_MONO 1
 #else
 #define FREEINK_DRIVER_PAPER_MONO 0
+#endif
+// Waveshare ESP32-S3-ePaper-1.54 V2: SSD1681 (200x200). Ssd1681Driver is an
+// external-library driver over the ssd1681_fast component (the board's reviewed,
+// whitelisted command surface), which the device env must provide.
+#if FREEINK_DEVICE_WS154
+#define FREEINK_DRIVER_SSD1681 1
+#else
+#define FREEINK_DRIVER_SSD1681 0
 #endif
 // EEGO Reader A4: UC8279C (768x552), UC81xx KW-family sibling of the UC8279 X4 driver.
 #if FREEINK_DEVICE_EEGO_A4
@@ -361,7 +372,8 @@
 #ifndef FREEINK_SD_SDMMC
 #define FREEINK_SD_SDMMC                                                                            \
   (FREEINK_DEVICE_DELINK || FREEINK_DEVICE_X4PRO || FREEINK_DEVICE_X4CLASSIC || FREEINK_DEVICE_PAPERMONO || \
-   FREEINK_DEVICE_MURPHY_M4 || FREEINK_DEVICE_WS397 || FREEINK_DEVICE_METALIO_EINK4 || FREEINK_DEVICE_PICCO)
+   FREEINK_DEVICE_MURPHY_M4 || FREEINK_DEVICE_WS397 || FREEINK_DEVICE_METALIO_EINK4 || FREEINK_DEVICE_PICCO || \
+   FREEINK_DEVICE_WS154)
 #endif
 
 // Serial log transport hint for consumer firmware. Boards can share the same MCU
@@ -423,6 +435,7 @@ enum class Board : uint8_t {
   Picco,        // Onyx Picco / BOOX Tiles: ESP32-S3 (16MB flash, 8MB octal PSRAM), SSD1677/2677 800x480 portrait,
                 // capacitive touch, 2-ch I2C frontlight, 4-bit SDMMC, ADC battery. RE'd from retail
                 // firmware.
+  WsEpaper154,  // Waveshare ESP32-S3-ePaper-1.54 V2: SSD1681 200x200, BOOT + PWR keys, ES8311 speaker
 };
 
 // How the board reports button presses.
@@ -456,7 +469,8 @@ enum class DisplayController : uint8_t {
   IT8951 = 5,
   UC8279 = 6,
   UC8179 = 7,
-  UC8279C = 8  // EEGO A4 768x552 sibling of the UC8279 family (Uc8279cA4Driver)
+  UC8279C = 8,  // EEGO A4 768x552 sibling of the UC8279 family (Uc8279cA4Driver)
+  SSD1681 = 9   // Waveshare 1.54" V2 200x200 (Ssd1681Driver, external ssd1681_fast library)
 };
 
 // Optional capacitive touch controller.
@@ -1646,6 +1660,55 @@ constexpr BoardProfile WS_EPAPER_397 = {
     // The SHTC3 (0x70) has no EnvironmentSensor backend yet, so it stays 0.
     {41, 42, 400000, 0x51, 0, 0x6B, 0, RtcType::Pcf85063, ImuType::Qmi8658}};
 
+// Waveshare ESP32-S3-ePaper-1.54 V2 (ESP32-S3, 8 MB flash, 8 MB octal PSRAM).
+//
+// Panel: 1.54" 200x200 B/W behind an SSD1681. The panel supply is an AO3401
+// P-FET on GPIO6, so `display.powerEnable` is ACTIVE-LOW here. Ssd1681Driver is
+// an external-bus driver that hands the panel to the ssd1681_fast component,
+// which switches that rail itself; EpdBus never touches these pins.
+//
+// Keys: BOOT (GPIO0) and PWR (GPIO18), both active-low with pull-ups. BOOT is the
+// deep-sleep wake source. GPIO17 is the battery latch: it must be driven HIGH
+// early in boot (holdPowerRails()) and held through deep sleep, or the board
+// switches itself off on battery.
+//
+// Storage: 1-bit SDMMC (CLK39 CMD41 D0 40). Audio: ES8311 codec (I2C 0x18 on
+// SDA47/SCL48, active-low rail GPIO42) into a speaker amp (enable GPIO46),
+// I2S MCLK14 BCLK15 WS38 DOUT45.
+//
+// Pin map and panel bring-up come from FreeInkBoy, which runs on this board.
+constexpr BoardProfile WS_EPAPER_154 = {
+    Board::WsEpaper154,
+    "ws154",
+    InputStyle::DigitalButtons,
+    DisplayController::SSD1681,
+    200,
+    200,
+    // SCK12 MOSI13 CS11 DC10 RST9 BUSY8; panel power GPIO6 (active-low).
+    {12, 13, 11, 10, 9, 8, 6},
+    10000000,  // displaySpiHz: SSD1681 full-refresh clock (ssd1681_fast raises it to 20 MHz for fast scans)
+    // SD is 1-bit SDMMC (sdmmc field below); these SPI pins are unused.
+    {PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, false, 0},
+    // back/left/right/up/down unassigned, confirm=BOOT(0), power=PWR(18), active-low.
+    {PIN_UNASSIGNED, 0, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, 18, false},
+    PIN_UNASSIGNED,  // batteryAdc: not used
+    PIN_UNASSIGNED,  // batteryChargeStatus
+    2.0f,
+    PIN_UNASSIGNED,  // usbDetect
+    NO_TOUCH,
+    NO_FRONTLIGHT,
+    {AudioOutput::I2sEs8311, 15, 38, 45, 14, 42, false, 46, 47, 48, 0x18, PIN_UNASSIGNED},
+    NO_LEDS,
+    NO_FLIP,
+    {39, 41, 40, PIN_UNASSIGNED, PIN_UNASSIGNED, PIN_UNASSIGNED, 1},  // SDMMC 1-bit
+    NO_GAUGE,
+    NO_MIC,
+    NO_SENSORS,
+    1.0f,  // uiScale
+    {17, PIN_UNASSIGNED, PIN_UNASSIGNED, false},  // power: GPIO17 battery latch
+    0,             // displayControllerVariant
+    {0, 0, 0, 0}};  // viewableInsets: no bezel overlap on the 200x200 panel
+
 // Metalio E-Ink 4: pin mapping follows metalio-hw-test v2.0.51 config.h.
 // The supplied GPIO workbook reverses DC/RST; see docs/metalio-eink4-support.md.
 constexpr BoardProfile METALIO_EINK4 = {
@@ -2042,7 +2105,8 @@ constexpr uint32_t MAX_FRAMEBUFFER_BYTES = cmax(
                              FREEINK_DEVICE_ONEPAGE ? panelBytes(ONEPAGE) : 0u),
                         cmax(FREEINK_DEVICE_WS397 ? panelBytes(WS_EPAPER_397) : 0u,
                              cmax(FREEINK_DEVICE_METALIO_EINK4 ? panelBytes(METALIO_EINK4) : 0u,
-                                  FREEINK_DEVICE_PICCO ? panelBytes(PICCO) : 0u)))))));
+                                  cmax(FREEINK_DEVICE_PICCO ? panelBytes(PICCO) : 0u,
+                                       FREEINK_DEVICE_WS154 ? panelBytes(WS_EPAPER_154) : 0u))))))));
 
 // Compile-time default device — the profile ACTIVE starts as. With a single
 // device in the build this is the only device; with several same-MCU devices it
@@ -2053,6 +2117,8 @@ constexpr BoardProfile DEFAULT_DEVICE = METALIO_EINK4;
 constexpr BoardProfile DEFAULT_DEVICE = WS_EPAPER_397;
 #elif FREEINK_DEVICE_PICCO
 constexpr BoardProfile DEFAULT_DEVICE = PICCO;
+#elif FREEINK_DEVICE_WS154
+constexpr BoardProfile DEFAULT_DEVICE = WS_EPAPER_154;
 #elif FREEINK_DEVICE_ONEPAGE
 constexpr BoardProfile DEFAULT_DEVICE = ONEPAGE;
 #elif FREEINK_DEVICE_PAPERMONO
@@ -2192,6 +2258,11 @@ inline bool selectDevice(Board which) {
       ACTIVE = PICCO;
       break;
 #endif
+#if FREEINK_DEVICE_WS154
+    case Board::WsEpaper154:
+      ACTIVE = WS_EPAPER_154;
+      break;
+#endif
     default:
       return false;
   }
@@ -2217,6 +2288,7 @@ inline bool isMetalioEInk4() { return ACTIVE.board == Board::MetalioEInk4; }
 inline bool isOnePage() { return ACTIVE.board == Board::OnePage; }
 inline bool isWsEpaper397() { return ACTIVE.board == Board::WsEpaper397; }
 inline bool isPicco() { return ACTIVE.board == Board::Picco; }
+inline bool isWsEpaper154() { return ACTIVE.board == Board::WsEpaper154; }
 inline bool hasTouch() { return ACTIVE.touch.controller != TouchController::None; }
 inline bool hasHomeKey() { return ACTIVE.touch.hasHomeKey; }
 inline bool hasPwmFrontlight() { return ACTIVE.frontlight.gpio != PIN_UNASSIGNED || ACTIVE.frontlight.viaPm1Pwm; }
